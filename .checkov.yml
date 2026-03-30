@@ -1,0 +1,43 @@
+# Checkov Configuration
+# https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+
+# Frameworks to scan
+framework:
+  - terraform
+  - bicep
+  - arm
+
+# Directories to scan
+directory:
+  - terraform
+  - bicep
+
+# Skip specific checks (with justification)
+skip-check:
+  # Skip if using private endpoints instead of firewall rules
+  # - CKV_AZURE_35  # Storage account network rules
+
+# Soft fail - don't fail on these (report only)
+soft-fail-on:
+  - CKV_AZURE_206  # Storage account using customer managed key
+
+# Check severity threshold
+check-severity:
+  - HIGH
+  - CRITICAL
+
+# Output format
+output:
+  - cli
+  - sarif
+
+# Compact output
+compact: true
+
+# Download external modules
+download-external-modules: true
+
+# Custom policies directory
+external-checks-dir:
+  - policies/checkov
+

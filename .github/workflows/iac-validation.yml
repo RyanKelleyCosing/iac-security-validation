@@ -1,0 +1,179 @@
+name: 🛡️ IaC Security & Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - 'bicep/**'
+      - 'policies/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - 'bicep/**'
+      - 'policies/**'
+  workflow_dispatch:
+
+env:
+  TF_VERSION: '1.5.0'
+  CHECKOV_VERSION: '3.0.0'
+
+jobs:
+  # ============================================
+  # Stage 1: Terraform Validation
+  # ============================================
+  terraform-validate:
+    name: 🔧 Terraform Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: terraform/
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: terraform/
+
+  # ============================================
+  # Stage 2: Bicep Validation
+  # ============================================
+  bicep-validate:
+    name: 🔧 Bicep Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Azure CLI
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az bicep version
+
+      - name: Bicep Build (Validate)
+        run: |
+          for file in bicep/*.bicep; do
+            echo "Validating $file..."
+            az bicep build --file "$file" --stdout > /dev/null
+          done
+
+  # ============================================
+  # Stage 3: Security Scanning with Checkov
+  # ============================================
+  checkov-scan:
+    name: 🔍 Checkov Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform,bicep,arm
+          output_format: cli,sarif
+          output_file_path: console,checkov-results.sarif
+          soft_fail: false
+          config_file: .checkov.yml
+
+      - name: Upload Checkov results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+
+  # ============================================
+  # Stage 4: tfsec Scanning
+  # ============================================
+  tfsec-scan:
+    name: 🔍 tfsec Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform/
+          soft_fail: false
+          format: sarif
+          sarif_file: tfsec-results.sarif
+
+      - name: Upload tfsec results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: tfsec-results.sarif
+
+  # ============================================
+  # Stage 5: Cost Estimation
+  # ============================================
+  infracost:
+    name: 💰 Cost Estimation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate cost breakdown
+        run: |
+          infracost breakdown --path=terraform/ \
+            --format=json \
+            --out-file=/tmp/infracost.json
+
+      - name: Post PR comment
+        uses: infracost/actions/comment@v1
+        with:
+          path: /tmp/infracost.json
+          behavior: update
+
+  # ============================================
+  # Stage 6: OPA Policy Check
+  # ============================================
+  opa-policy:
+    name: 📋 OPA Policy Check
+    runs-on: ubuntu-latest
+    needs: [terraform-validate]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Generate Terraform Plan JSON
+        run: |
+          cd terraform/
+          terraform init -backend=false
+          terraform plan -out=tfplan.binary 2>/dev/null || true
+          terraform show -json tfplan.binary > ../tfplan.json 2>/dev/null || echo '{}' > ../tfplan.json
+
+      - name: Run OPA policies
+        run: |
+          opa eval --data policies/opa/ --input tfplan.json "data.terraform.deny" --format pretty
+

@@ -1,4 +1,4 @@
-# 🛡️ IaC Security & Validation Pipeline
+# IaC Security & Validation Pipeline
 
 [![IaC Scan](https://img.shields.io/badge/Checkov-Passed-green?logo=terraform)](.)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -7,16 +7,16 @@
 
 A **policy-as-code** pipeline that validates Infrastructure as Code before deployment, preventing misconfigurations and security issues from reaching production.
 
-> 💡 **Impact**: Achieved **90% reduction** in configuration drift and security issues by catching them at PR time.
+> **Impact**: Achieved **90% reduction** in configuration drift and security issues by catching them at PR time.
 
-## 🎯 What This Project Demonstrates
+## What This Project Demonstrates
 
 - **Shift-left infrastructure security**: Catch IaC issues before they become production problems
 - **Policy-as-code**: Automated enforcement of security and compliance rules
 - **Cost awareness**: Estimate infrastructure costs before deployment
 - **GitOps ready**: PR-based workflow with automated feedback
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -56,21 +56,21 @@ A **policy-as-code** pipeline that validates Infrastructure as Code before deplo
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    PR Comment with Results                              │
-│  ✅ Validation: Passed                                                  │
-│  ⚠️  Security: 2 medium findings                                        │
-│  💰 Cost: +$45/month                                                    │
-│  📋 Plan: 3 to add, 1 to change, 0 to destroy                          │
+│   Validation: Passed                                                  │
+│    Security: 2 medium findings                                        │
+│   Cost: +$45/month                                                    │
+│   Plan: 3 to add, 1 to change, 0 to destroy                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 1. Fork this repository
 2. Add required secrets (see Configuration)
 3. Create a PR with infrastructure changes
 4. Watch the automated validation in action!
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── .github/
@@ -90,7 +90,7 @@ A **policy-as-code** pipeline that validates Infrastructure as Code before deplo
 └── README.md
 ```
 
-## 🔒 Security Checks
+## Security Checks
 
 | Check | Tool | What It Catches |
 |-------|------|-----------------|
@@ -100,17 +100,17 @@ A **policy-as-code** pipeline that validates Infrastructure as Code before deplo
 | Compliance | OPA | Custom organization policies |
 | Secrets | Checkov | Hardcoded credentials |
 
-## 💰 Cost Features
+## Cost Features
 
 - **PR cost comments**: See cost impact before merge
 - **Cost thresholds**: Block PRs exceeding budget
 - **Trend analysis**: Track infrastructure cost over time
 
-## 📝 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built with ❤️ for secure infrastructure practices**
+**Built for secure infrastructure practices**
 

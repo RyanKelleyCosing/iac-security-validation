@@ -46,6 +46,17 @@ jobs:
         run: terraform validate
         working-directory: terraform/
 
+      - name: Terraform Validate (JSON output for backend checks)
+        run: |
+          result=$(terraform validate -json)
+          echo "$result"
+          valid=$(echo "$result" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d['valid'])")
+          if [ "$valid" != "True" ]; then
+            echo "Terraform validation failed."
+            exit 1
+          fi
+        working-directory: terraform/
+
   # ============================================
   # Stage 2: Bicep Validation
   # ============================================
